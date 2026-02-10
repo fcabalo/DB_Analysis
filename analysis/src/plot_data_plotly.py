@@ -43,8 +43,8 @@ parser.add_argument(
 parser.add_argument(
     "--max-points",
     type=int,
-    default=3000,
-    help="Maximum number of points for visualization (default: 3000)",
+    default=1000,
+    help="Maximum number of points for visualization (default: 1000)",
 )
 parser.add_argument(
     "--output-dir",
@@ -56,6 +56,11 @@ parser.add_argument(
     "--no-png", action="store_true", help="Skip PNG generation (only create HTML)"
 )
 parser.add_argument("--no-csv", action="store_true", help="Skip CSV exports")
+parser.add_argument(
+    "--lightweight",
+    action="store_true",
+    help="Generate lightweight HTML (no markers, simplified features)",
+)
 parser.add_argument(
     "--encoding",
     type=str,
@@ -313,6 +318,7 @@ output_dir = args.output_dir
 os.makedirs(output_dir, exist_ok=True)
 
 # Create a single timeline figure
+print("Creating figure...")
 fig = go.Figure()
 
 # Plot each field
@@ -328,6 +334,7 @@ colors = [
     "olive",
     "cyan",
 ]
+print(f"Adding {len(value_columns)} traces to figure...")
 for idx, field_name in enumerate(sorted(value_columns)):
     if field_name not in df_plot.columns:
         continue
@@ -356,31 +363,44 @@ for idx, field_name in enumerate(sorted(value_columns)):
             )
         else:
             # For numeric, show actual values
-            fig.add_trace(
-                go.Scatter(
-                    x=df_plot["timestamp"],
-                    y=df_plot[field_name],
-                    mode="lines+markers",
-                    name=field_name,
-                    line=dict(color=color),
-                    marker=dict(size=4),
+            if args.lightweight:
+                # Lightweight mode: lines only, no markers
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_plot["timestamp"],
+                        y=df_plot[field_name],
+                        mode="lines",
+                        name=field_name,
+                        line=dict(color=color, width=2),
+                    )
                 )
-            )
+            else:
+                # Full mode: lines + markers
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_plot["timestamp"],
+                        y=df_plot[field_name],
+                        mode="lines+markers",
+                        name=field_name,
+                        line=dict(color=color),
+                        marker=dict(size=4),
+                    )
+                )
+    print(f"  Added trace for {field_name}")
 
 # Update layout
+print("Updating layout...")
 fig.update_layout(
     title=f"Telemetry Data: {base_filename}",
     xaxis_title="Time (UTC)",
     yaxis_title="Values",
     xaxis=dict(
         type="date",
-        rangeslider=dict(visible=True),
+        rangeslider=dict(visible=False),  # Disable rangeslider for better performance
         rangeselector=dict(
             buttons=list(
                 [
-                    dict(count=1, label="1m", step="minute", stepmode="backward"),
                     dict(count=5, label="5m", step="minute", stepmode="backward"),
-                    dict(count=15, label="15m", step="minute", stepmode="backward"),
                     dict(count=1, label="1h", step="hour", stepmode="backward"),
                     dict(step="all", label="All"),
                 ]
@@ -394,7 +414,17 @@ fig.update_layout(
 
 # Save HTML
 output_file_html = os.path.join(output_dir, f"{base_filename}_timeseries.html")
-fig.write_html(output_file_html)
+print(f"Saving HTML to {output_file_html}...")
+if args.lightweight:
+    # Lightweight mode: use CDN (smaller file) and minimal config
+    fig.write_html(
+        output_file_html,
+        include_plotlyjs="cdn",
+        config={"displayModeBar": True, "displaylogo": False},
+    )
+else:
+    # Full mode: include plotly.js (works offline)
+    fig.write_html(output_file_html)
 print(f"Graph saved as {output_file_html}")
 
 # Save PNG if requested
@@ -403,6 +433,7 @@ if not args.no_png:
 
     # Try method 1: kaleido
     png_saved = False
+    print("Attempting PNG export with kaleido...")
     try:
         import kaleido
 

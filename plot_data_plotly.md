@@ -126,7 +126,39 @@ python analysis/src/plot_data_plotly.py data.jsonl `
 python analysis/src/plot_data_plotly.py data.jsonl --fields ActivatedHornHigh --encoding utf-16
 ```
 
-## Example
+# Lightweight mode (for large datasets or faster browser loading)
+
+### Unix/Linux/Mac
+```bash
+python analysis/src/plot_data_plotly.py data.jsonl \
+ --fields ActivatedHornHigh ThreewaySwitchState \
+ --max-points 500 \
+ --lightweight \
+ --no-png \
+ --output-dir output
+```
+
+### Windows (PowerShell)
+```powershell
+python analysis/src/plot_data_plotly.py data.jsonl `
+ --fields ActivatedHornHigh ThreewaySwitchState `
+ --max-points 500 `
+ --lightweight `
+ --no-png `
+ --output-dir output
+```
+
+### Windows (cmd)
+```cmd
+python analysis/src/plot_data_plotly.py data.jsonl --fields ActivatedHornHigh ThreewaySwitchState --max-points 500 --lightweight --no-png --output-dir output
+```
+
+**Lightweight mode benefits:**
+- Smaller HTML file size (uses CDN instead of embedding plotly.js)
+- Faster browser rendering (no markers on numeric fields, rangeslider disabled)
+- Recommended for datasets with 100k+ records
+
+## Example (Regular Mode)
 
 ### Unix/Linux/Mac
 
@@ -136,7 +168,7 @@ python analysis/src/plot_data_plotly.py data/couchdb_export_20260126_112255.json
  "message.OutsideControlData.ActivateHornLow" \
  "message.MessagePayload.ThreewaySwitchState" \
  "message.SandingIsActive" \
- --max-points 3000 \
+ --max-points 1000 \
  --output-dir output
 ```
 
@@ -148,12 +180,54 @@ python analysis/src/plot_data_plotly.py data/couchdb_export_20260126_112255.json
  "message.OutsideControlData.ActivateHornLow" `
  "message.MessagePayload.ThreewaySwitchState" `
  "message.SandingIsActive" `
- --max-points 3000 `
+ --max-points 1000 `
  --output-dir output
 ```
 
 ### Windows (cmd)
 
 ```cmd
-python analysis/src/plot_data_plotly.py data/couchdb_export_20260126_112255.jsonl --field-paths "message.OutsideControlData.ActivateHornHigh" "message.OutsideControlData.ActivateHornLow" "message.MessagePayload.ThreewaySwitchState" "message.SandingIsActive" --max-points 3000 --output-dir output
+python analysis/src/plot_data_plotly.py data/couchdb_export_20260126_112255.jsonl --field-paths "message.OutsideControlData.ActivateHornHigh" "message.OutsideControlData.ActivateHornLow" "message.MessagePayload.ThreewaySwitchState" "message.SandingIsActive" --max-points 1000 --output-dir output
 ```
+
+## Example (Optimized for Large Datasets - 300k+ records)
+
+### Unix/Linux/Mac
+
+```bash
+python analysis/src/plot_data_plotly.py data/couchdb_export_20260126_112255.jsonl \
+ --field-paths "message.OutsideControlData.ActivateHornHigh" \
+ "message.OutsideControlData.ActivateHornLow" \
+ "message.MessagePayload.ThreewaySwitchState" \
+ "message.SandingIsActive" \
+ --max-points 500 \
+ --lightweight \
+ --no-png \
+ --output-dir output
+```
+
+### Windows (PowerShell)
+
+```powershell
+python analysis/src/plot_data_plotly.py data/couchdb_export_20260126_112255.jsonl `
+ --field-paths "message.OutsideControlData.ActivateHornHigh" `
+ "message.OutsideControlData.ActivateHornLow" `
+ "message.MessagePayload.ThreewaySwitchState" `
+ "message.SandingIsActive" `
+ --max-points 500 `
+ --lightweight `
+ --no-png `
+ --output-dir output
+```
+
+### Windows (cmd)
+
+```cmd
+python analysis/src/plot_data_plotly.py data/couchdb_export_20260126_112255.jsonl --field-paths "message.OutsideControlData.ActivateHornHigh" "message.OutsideControlData.ActivateHornLow" "message.MessagePayload.ThreewaySwitchState" "message.SandingIsActive" --max-points 500 --lightweight --no-png --output-dir output
+```
+
+**Performance Tips:**
+- For datasets with 100k-500k records: use `--max-points 500 --lightweight --no-png`
+- For datasets with 500k+ records: use `--max-points 300 --lightweight --no-png`
+- The HTML file will be much smaller and load faster in the browser
+- You can always increase `--max-points` if you need more detail

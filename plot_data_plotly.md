@@ -49,6 +49,8 @@ python process_telemetry.py data.jsonl \
 
 ## Example
 
+### Unix/Linux/Mac
+
 ```bash
 python process_telemetry.py ../data/couchdb_export_20260126_112255.jsonl \
  --field-paths "message.OutsideControlData.ActivateHornHigh" \
@@ -57,4 +59,22 @@ python process_telemetry.py ../data/couchdb_export_20260126_112255.jsonl \
  "message.SandingIsActive" \
  --max-points 3000 \
  --output-dir ../output
+```
+
+### Windows (PowerShell)
+
+```powershell
+python process_telemetry.py ../data/couchdb_export_20260126_112255.jsonl `
+ --field-paths "message.OutsideControlData.ActivateHornHigh" `
+ "message.OutsideControlData.ActivateHornLow" `
+ "message.MessagePayload.ThreewaySwitchState" `
+ "message.SandingIsActive" `
+ --max-points 3000 `
+ --output-dir ../output
+```
+
+### Windows (cmd) or single line
+
+```cmd
+python process_telemetry.py ../data/couchdb_export_20260126_112255.jsonl --field-paths "message.OutsideControlData.ActivateHornHigh" "message.OutsideControlData.ActivateHornLow" "message.MessagePayload.ThreewaySwitchState" "message.SandingIsActive" --max-points 3000 --output-dir ../output
 ```

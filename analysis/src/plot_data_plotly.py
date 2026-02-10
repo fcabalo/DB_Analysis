@@ -53,7 +53,7 @@ parser.add_argument(
     help="Output directory for generated files (default: current directory)",
 )
 parser.add_argument(
-    "--no-png", action="store_true", help="Skip PNG generation (only create HTML)"
+    "--png", action="store_true", help="Skip PNG generation (only create HTML)"
 )
 parser.add_argument("--no-csv", action="store_true", help="Skip CSV exports")
 parser.add_argument(
@@ -428,7 +428,7 @@ else:
 print(f"Graph saved as {output_file_html}")
 
 # Save PNG if requested
-if not args.no_png:
+if args.png:
     output_file_png = os.path.join(output_dir, f"{base_filename}_timeseries.png")
 
     # Try method 1: kaleido

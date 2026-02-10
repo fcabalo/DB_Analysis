@@ -53,27 +53,29 @@ python analyze_message_types.py data.jsonl `
 python analyze_message_types.py data.jsonl --output-dir ./analysis
 ```
 
-## Skip PNG Generation (Faster Processing)
+## Enable PNG Generation
 
 ### Unix/Linux/Mac
 
 ```bash
 python analyze_message_types.py data.jsonl \
-  --no-png
+  --png
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
 python analyze_message_types.py data.jsonl `
-  --no-png
+  --png
 ```
 
 ### Windows (cmd)
 
 ```cmd
-python analyze_message_types.py data.jsonl --no-png
+python analyze_message_types.py data.jsonl --png
 ```
+
+**Note:** PNG generation is **disabled by default** for faster processing. Use `--png` to enable it.
 
 ## Specify Encoding
 
@@ -128,7 +130,6 @@ python analyze_message_types.py data/couchdb_export_20260126_112255.jsonl --outp
 ```bash
 python analyze_message_types.py data/large_file.jsonl \
   --output-dir ./output \
-  --no-png \
   --encoding auto
 ```
 
@@ -137,21 +138,21 @@ python analyze_message_types.py data/large_file.jsonl \
 ```powershell
 python analyze_message_types.py data/large_file.jsonl `
   --output-dir ./output `
-  --no-png `
   --encoding auto
 ```
 
 ### Windows (cmd)
 
 ```cmd
-python analyze_message_types.py data/large_file.jsonl --output-dir ./output --no-png --encoding auto
+python analyze_message_types.py data/large_file.jsonl --output-dir ./output --encoding auto
 ```
 
-**Why `--no-png` for large datasets?**
+**Default behavior for faster processing:**
 
-- Skips PNG image generation which can be slow
+- PNG generation is disabled by default
 - HTML files are still created and are interactive
 - Significantly faster processing
+- Add `--png` flag only if you need static images
 
 ## Output Files
 
@@ -178,12 +179,12 @@ The script generates the following files:
 
    - Static image of the table
    - Requires kaleido package
-   - Skip with `--no-png` flag
+   - Generated only with `--png` flag
 
 5. **PNG Chart** (optional): `{filename}_message_type_chart.png`
    - Static image of the bar chart
    - Requires kaleido package
-   - Skip with `--no-png` flag
+   - Generated only with `--png` flag
 
 ## CSV Output Columns
 
@@ -204,29 +205,29 @@ The script generates the following files:
 | `jsonl_file`   | Required | Path to the JSONL file                                | -                       |
 | `--output-dir` | Optional | Output directory for generated files                  | Current directory (`.`) |
 | `--encoding`   | Optional | File encoding: `auto`, `utf-8`, `utf-16`, `utf-16-le` | `auto`                  |
-| `--no-png`     | Flag     | Skip PNG generation (faster processing)               | False                   |
+| `--png`        | Flag     | Enable PNG generation (disabled by default)           | False                   |
 
 ## Examples by Use Case
 
-### Quick Analysis (Console + CSV Only)
+### Quick Analysis (Default - Fastest)
 
 ```bash
-# Fastest option - only generates CSV
-python analyze_message_types.py data.jsonl --no-png
+# Default mode - only generates CSV and HTML (no PNG)
+python analyze_message_types.py data.jsonl
 ```
 
-### Full Analysis with All Outputs
+### Full Analysis with PNG Images
 
 ```bash
 # Generates CSV, HTML, and PNG files
-python analyze_message_types.py data.jsonl --output-dir ./reports
+python analyze_message_types.py data.jsonl --output-dir ./reports --png
 ```
 
 ### Large Dataset (Optimized for Speed)
 
 ```bash
-# Skip PNG generation for faster processing
-python analyze_message_types.py large_data.jsonl --no-png --output-dir ./output
+# Default behavior - PNG disabled for faster processing
+python analyze_message_types.py large_data.jsonl --output-dir ./output
 ```
 
 ### UTF-16 Encoded File
@@ -236,11 +237,11 @@ python analyze_message_types.py large_data.jsonl --no-png --output-dir ./output
 python analyze_message_types.py data.jsonl --encoding utf-16 --output-dir ./output
 ```
 
-### Production Use (Save to Reports Directory)
+### Production Use with PNG Export
 
 ```bash
-# Organized output with all files
-python analyze_message_types.py data.jsonl --output-dir ./reports/$(date +%Y%m%d)
+# Organized output with all files including PNG
+python analyze_message_types.py data.jsonl --output-dir ./reports/$(date +%Y%m%d) --png
 ```
 
 ## Progress Indicators
@@ -309,13 +310,14 @@ approximately every 5 seconds, suggesting it's a periodic heartbeat signal.
 
 ### For Large Files (100k+ records)
 
-1. Use `--no-png` to skip PNG generation
+1. Default mode is already optimized (PNG disabled)
 2. Use `--encoding utf-16` if you know the encoding (faster than auto-detect)
 3. Consider processing on a machine with more RAM
+4. Only add `--png` if you specifically need static images
 
 ### For Very Large Files (1M+ records)
 
-1. Always use `--no-png`
+1. PNG is disabled by default (optimal)
 2. Specify exact encoding with `--encoding`
 3. Monitor system memory usage
 4. The CSV file will still contain all detailed statistics
@@ -327,7 +329,7 @@ approximately every 5 seconds, suggesting it's a periodic heartbeat signal.
 - **1M records**: ~2-5 minutes
 - **10M records**: ~20-40 minutes
 
-_Times vary based on system performance and encoding_
+_Times vary based on system performance and encoding. PNG generation adds minimal overhead when enabled._
 
 ## Troubleshooting
 
@@ -341,26 +343,26 @@ _Times vary based on system performance and encoding_
 - Verify the file is valid JSONL format (one JSON object per line)
 - Check if file is actually UTF-16 by opening in text editor
 
-### PNG export fails
+### PNG export fails (when --png is used)
 
 **Cause**: Kaleido package not installed or incompatible
 
 **Solutions**:
 
 - Install kaleido: `pip install kaleido`
-- Or use `--no-png` to skip PNG generation
-- HTML files will still be created and are interactive
+- Or omit `--png` flag (HTML files are still created)
+- HTML files are interactive and often better than static PNG
 - Upgrade packages: `pip install --upgrade plotly kaleido`
 
 ### Large file processing is slow
 
-**Cause**: PNG generation and encoding detection overhead
+**Cause**: Encoding detection overhead
 
 **Solutions**:
 
-- Use `--no-png` to speed up processing significantly
+- PNG is already disabled by default (optimal)
 - Specify exact encoding: `--encoding utf-16`
-- The CSV and HTML outputs will still be generated
+- The CSV and HTML outputs will still be generated quickly
 
 ### Script appears stuck
 
@@ -463,7 +465,17 @@ This script works well with the telemetry plotting script:
 
 ## Version History
 
-### v1.1 (Current)
+### v1.2 (Current)
+
+- Changed PNG generation to opt-in with `--png` flag (disabled by default)
+- Improved performance for default usage
+- Added progress indicators for large files
+- Fixed timestamp sorting bug
+- Improved encoding detection
+- Better error handling
+- Optimized memory usage
+
+### v1.1
 
 - Added progress indicators for large files
 - Fixed timestamp sorting bug

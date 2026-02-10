@@ -28,7 +28,7 @@ parser.add_argument(
     choices=["auto", "utf-8", "utf-16", "utf-16-le"],
     help="File encoding (default: auto-detect)",
 )
-parser.add_argument("--no-png", action="store_true", help="Skip PNG generation")
+parser.add_argument("--png", action="store_true", help="Skip PNG generation")
 
 args = parser.parse_args()
 
@@ -250,7 +250,7 @@ fig_bar.write_html(output_file_bar_html)
 print(f"Chart saved as {output_file_bar_html}")
 
 # Save PNG if requested
-if not args.no_png:
+if args.png:
     print("\nGenerating PNG files...")
 
     # Save table as PNG

@@ -33,54 +33,46 @@ parser.add_argument("--no-png", action="store_true", help="Skip PNG generation")
 args = parser.parse_args()
 
 # ============================================================
-# HELPER FUNCTIONS
-# ============================================================
-
-
-def auto_detect_encoding(filepath):
-    """Auto-detect file encoding"""
-    encodings_to_try = ["utf-16", "utf-16-le", "utf-8"]
-
-    for encoding in encodings_to_try:
-        try:
-            with open(filepath, "r", encoding=encoding, errors="ignore") as f:
-                for _ in range(3):
-                    line = f.readline()
-                    if line:
-                        json.loads(line.strip())
-                print(f"Detected encoding: {encoding}")
-                return encoding
-        except:
-            continue
-
-    print("Could not auto-detect encoding, using utf-8")
-    return "utf-8"
-
-
-# ============================================================
 # LOAD JSONL FILE
 # ============================================================
 
 print(f"Loading JSONL file: {args.jsonl_file}")
 
+# Determine encoding
 if args.encoding == "auto":
-    encoding = auto_detect_encoding(args.jsonl_file)
+    # Quick check for UTF-16 BOM
+    with open(args.jsonl_file, "rb") as f:
+        first_bytes = f.read(2)
+        if first_bytes == b"\xff\xfe":
+            encoding = "utf-16-le"
+            print(f"Detected encoding: utf-16-le (BOM found)")
+        else:
+            encoding = "utf-8"
+            print(f"Using encoding: utf-8")
 else:
     encoding = args.encoding
     print(f"Using specified encoding: {encoding}")
 
 # Load data and analyze
-data = []
 message_type_data = defaultdict(lambda: {"count": 0, "timestamps": []})
+
+total_records = 0
+print("Processing records...")
 
 with open(args.jsonl_file, "r", encoding=encoding, errors="ignore") as f:
     for line_num, line in enumerate(f, 1):
+        if line_num % 10000 == 0:
+            print(
+                f"  Processed {line_num} lines... ({len(message_type_data)} unique message types)"
+            )
+
         line = line.strip()
         if not line:
             continue
+
         try:
             obj = json.loads(line)
-            data.append(obj)
+            total_records += 1
 
             # Get message type and timestamp
             msg_type = obj.get("messageContentType", "UNKNOWN")
@@ -98,13 +90,11 @@ with open(args.jsonl_file, "r", encoding=encoding, errors="ignore") as f:
                     pass
 
         except json.JSONDecodeError as e:
-            if line_num <= 3:
-                print(
-                    f"Warning: Skipping invalid JSON on line {line_num}: {str(e)[:80]}"
-                )
+            if line_num <= 5:
+                print(f"Warning: Skipping invalid JSON on line {line_num}")
             continue
 
-print(f"Loaded {len(data)} records")
+print(f"\nLoaded {total_records} records")
 print(f"Found {len(message_type_data)} unique message types")
 
 # ============================================================
@@ -122,39 +112,46 @@ for msg_type, data_dict in message_type_data.items():
     # Calculate average time between appearances
     avg_interval_seconds = None
     avg_interval_str = "N/A"
+    first_appearance = None
+    last_appearance = None
 
-    if len(timestamps) > 1:
-        # Sort timestamps
+    if len(timestamps) > 0:
+        # Sort timestamps first
         timestamps_sorted = sorted(timestamps)
+        first_appearance = timestamps_sorted[0]
+        last_appearance = timestamps_sorted[-1]
 
-        # Calculate intervals
-        intervals = []
-        for i in range(1, len(timestamps_sorted)):
-            interval = (timestamps_sorted[i] - timestamps_sorted[i - 1]).total_seconds()
-            intervals.append(interval)
+        # Calculate intervals only if we have more than one timestamp
+        if len(timestamps_sorted) > 1:
+            intervals = []
+            for i in range(1, len(timestamps_sorted)):
+                interval = (
+                    timestamps_sorted[i] - timestamps_sorted[i - 1]
+                ).total_seconds()
+                intervals.append(interval)
 
-        if intervals:
-            avg_interval_seconds = sum(intervals) / len(intervals)
+            if intervals:
+                avg_interval_seconds = sum(intervals) / len(intervals)
 
-            # Format nicely
-            if avg_interval_seconds < 1:
-                avg_interval_str = f"{avg_interval_seconds*1000:.2f} ms"
-            elif avg_interval_seconds < 60:
-                avg_interval_str = f"{avg_interval_seconds:.2f} sec"
-            elif avg_interval_seconds < 3600:
-                avg_interval_str = f"{avg_interval_seconds/60:.2f} min"
-            else:
-                avg_interval_str = f"{avg_interval_seconds/3600:.2f} hr"
+                # Format nicely
+                if avg_interval_seconds < 1:
+                    avg_interval_str = f"{avg_interval_seconds*1000:.2f} ms"
+                elif avg_interval_seconds < 60:
+                    avg_interval_str = f"{avg_interval_seconds:.2f} sec"
+                elif avg_interval_seconds < 3600:
+                    avg_interval_str = f"{avg_interval_seconds/60:.2f} min"
+                else:
+                    avg_interval_str = f"{avg_interval_seconds/3600:.2f} hr"
 
     results.append(
         {
             "Message Type": msg_type,
             "Count": count,
-            "Percentage": (count / len(data)) * 100,
+            "Percentage": (count / total_records) * 100 if total_records > 0 else 0,
             "Avg Interval (seconds)": avg_interval_seconds,
             "Avg Interval": avg_interval_str,
-            "First Appearance": timestamps_sorted[0] if timestamps else None,
-            "Last Appearance": timestamps_sorted[-1] if timestamps else None,
+            "First Appearance": first_appearance,
+            "Last Appearance": last_appearance,
         }
     )
 
@@ -254,6 +251,8 @@ print(f"Chart saved as {output_file_bar_html}")
 
 # Save PNG if requested
 if not args.no_png:
+    print("\nGenerating PNG files...")
+
     # Save table as PNG
     output_file_png = os.path.join(
         output_dir, f"{base_filename}_message_type_table.png"
@@ -281,8 +280,9 @@ if not args.no_png:
         print(f"Could not save chart PNG: {str(e)}")
 
 print("\n=== Analysis Complete ===")
-print(f"Total records: {len(data)}")
+print(f"Total records: {total_records}")
 print(f"Unique message types: {len(message_type_data)}")
-print(
-    f"Most common: {df_results.iloc[0]['Message Type']} ({df_results.iloc[0]['Count']} occurrences)"
-)
+if len(df_results) > 0:
+    print(
+        f"Most common: {df_results.iloc[0]['Message Type']} ({df_results.iloc[0]['Count']} occurrences)"
+    )

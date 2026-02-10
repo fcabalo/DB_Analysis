@@ -317,11 +317,46 @@ base_filename = os.path.splitext(os.path.basename(args.jsonl_file))[0]
 output_dir = args.output_dir
 os.makedirs(output_dir, exist_ok=True)
 
+# Analyze data types for each field
+field_types = {}
+for field_name in value_columns:
+    if field_name not in df_plot.columns:
+        continue
+
+    # Get non-null values
+    sample_values = df_plot[field_name].dropna()
+
+    if len(sample_values) == 0:
+        field_types[field_name] = "unknown"
+        continue
+
+    # Check data type
+    unique_values = set(sample_values.unique())
+
+    # Boolean check - check both actual booleans and numeric 0/1
+    if sample_values.dtype == bool:
+        field_types[field_name] = "boolean"
+    elif unique_values.issubset({True, False}):
+        field_types[field_name] = "boolean"
+    elif unique_values.issubset({0, 1}) and len(unique_values) <= 2:
+        field_types[field_name] = "boolean"
+    elif unique_values.issubset({0.0, 1.0}) and len(unique_values) <= 2:
+        field_types[field_name] = "boolean"
+    # Numeric check
+    elif pd.api.types.is_numeric_dtype(sample_values):
+        field_types[field_name] = "numeric"
+    # String check
+    elif pd.api.types.is_string_dtype(sample_values):
+        field_types[field_name] = "string"
+    else:
+        field_types[field_name] = "unknown"
+
+print(f"Detected field types: {field_types}")
+
 # Create a single timeline figure
-print("Creating figure...")
 fig = go.Figure()
 
-# Plot each field
+# Plot each field based on its type
 colors = [
     "red",
     "blue",
@@ -333,136 +368,195 @@ colors = [
     "gray",
     "olive",
     "cyan",
+    "magenta",
+    "teal",
+    "navy",
+    "maroon",
+    "lime",
+    "indigo",
+    "coral",
+    "gold",
+    "crimson",
+    "darkgreen",
 ]
-print(f"Adding {len(value_columns)} traces to figure...")
+
 for idx, field_name in enumerate(sorted(value_columns)):
     if field_name not in df_plot.columns:
         continue
 
     color = colors[idx % len(colors)]
+    field_type = field_types.get(field_name, "unknown")
 
-    # Check if field is boolean or numeric
-    sample_values = df_plot[field_name].dropna()
-    if len(sample_values) > 0:
-        is_boolean = sample_values.dtype == bool or set(
-            sample_values.unique()
-        ).issubset({True, False, 0, 1})
+    if field_type == "boolean":
+        # For boolean fields, show as thick line when True (value 1), nothing when False
+        # Convert to 1/None for visualization
+        y_values = []
+        for val in df_plot[field_name]:
+            if pd.isna(val):
+                y_values.append(None)
+            elif val == True or val == 1 or val == 1.0:
+                y_values.append(1)
+            else:
+                y_values.append(None)
 
-        if is_boolean:
-            # For boolean, show as line when True
-            y_values = [1 if val == True else None for val in df_plot[field_name]]
+        fig.add_trace(
+            go.Scatter(
+                x=df_plot["timestamp"],
+                y=y_values,
+                mode="lines",
+                name=f"{field_name} (bool)",
+                line=dict(color=color, width=4),
+                connectgaps=False,
+                hovertemplate="%{x}<br>" + field_name + ": True<extra></extra>",
+            )
+        )
+
+    elif field_type == "numeric":
+        # For numeric fields, show actual values with lines and markers
+        if args.lightweight:
+            # Lightweight mode: no markers
             fig.add_trace(
                 go.Scatter(
                     x=df_plot["timestamp"],
-                    y=y_values,
+                    y=df_plot[field_name],
                     mode="lines",
-                    name=field_name,
-                    line=dict(color=color, width=3),
-                    connectgaps=False,
+                    name=f"{field_name} (num)",
+                    line=dict(color=color, width=2),
+                    hovertemplate="%{x}<br>" + field_name + ": %{y}<extra></extra>",
                 )
             )
         else:
-            # For numeric, show actual values
-            if args.lightweight:
-                # Lightweight mode: lines only, no markers
-                fig.add_trace(
-                    go.Scatter(
-                        x=df_plot["timestamp"],
-                        y=df_plot[field_name],
-                        mode="lines",
-                        name=field_name,
-                        line=dict(color=color, width=2),
-                    )
+            # Regular mode: with markers
+            fig.add_trace(
+                go.Scatter(
+                    x=df_plot["timestamp"],
+                    y=df_plot[field_name],
+                    mode="lines+markers",
+                    name=f"{field_name} (num)",
+                    line=dict(color=color, width=2),
+                    marker=dict(size=4, color=color),
+                    hovertemplate="%{x}<br>" + field_name + ": %{y}<extra></extra>",
                 )
-            else:
-                # Full mode: lines + markers
-                fig.add_trace(
-                    go.Scatter(
-                        x=df_plot["timestamp"],
-                        y=df_plot[field_name],
-                        mode="lines+markers",
-                        name=field_name,
-                        line=dict(color=color),
-                        marker=dict(size=4),
-                    )
-                )
-    print(f"  Added trace for {field_name}")
-
-# Update layout
-print("Updating layout...")
-fig.update_layout(
-    title=f"Telemetry Data: {base_filename}",
-    xaxis_title="Time (UTC)",
-    yaxis_title="Values",
-    xaxis=dict(
-        type="date",
-        rangeslider=dict(visible=False),  # Disable rangeslider for better performance
-        rangeselector=dict(
-            buttons=list(
-                [
-                    dict(count=5, label="5m", step="minute", stepmode="backward"),
-                    dict(count=1, label="1h", step="hour", stepmode="backward"),
-                    dict(step="all", label="All"),
-                ]
             )
-        ),
-    ),
-    hovermode="x unified",
-    showlegend=True,
-    height=700,
-)
 
-# Save HTML
-output_file_html = os.path.join(output_dir, f"{base_filename}_timeseries.html")
-print(f"Saving HTML to {output_file_html}...")
+    elif field_type == "string":
+        # For string fields, show as categorical (convert to numeric codes)
+        # Get unique values and create a mapping
+        unique_vals = df_plot[field_name].dropna().unique()
+        val_to_num = {val: idx for idx, val in enumerate(unique_vals)}
+
+        y_values = [
+            val_to_num.get(val, None) if pd.notna(val) else None
+            for val in df_plot[field_name]
+        ]
+
+        fig.add_trace(
+            go.Scatter(
+                x=df_plot["timestamp"],
+                y=y_values,
+                mode="lines+markers",
+                name=f"{field_name} (str)",
+                line=dict(color=color, width=2),
+                marker=dict(size=6, color=color),
+                text=[str(val) if pd.notna(val) else "" for val in df_plot[field_name]],
+                hovertemplate="%{x}<br>" + field_name + ": %{text}<extra></extra>",
+            )
+        )
+
+    else:
+        # Unknown type - try to plot as-is
+        fig.add_trace(
+            go.Scatter(
+                x=df_plot["timestamp"],
+                y=df_plot[field_name],
+                mode="lines+markers",
+                name=f"{field_name}",
+                line=dict(color=color),
+                marker=dict(size=4),
+            )
+        )
+
+# Update layout based on mode
 if args.lightweight:
-    # Lightweight mode: use CDN (smaller file) and minimal config
+    # Lightweight mode - smaller file size
+    fig.update_layout(
+        title=f"Telemetry Data: {base_filename}",
+        xaxis_title="Time (UTC)",
+        yaxis_title="Values",
+        xaxis=dict(type="date"),
+        hovermode="x unified",
+        showlegend=True,
+        height=700,
+    )
+    # Write with CDN mode for smaller file size
+    config = {"displayModeBar": True, "displaylogo": False}
     fig.write_html(
-        output_file_html,
+        os.path.join(output_dir, f"{base_filename}_timeseries.html"),
+        config=config,
         include_plotlyjs="cdn",
-        config={"displayModeBar": True, "displaylogo": False},
     )
 else:
-    # Full mode: include plotly.js (works offline)
+    # Regular mode - full features
+    fig.update_layout(
+        title=f"Telemetry Data: {base_filename}",
+        xaxis_title="Time (UTC)",
+        yaxis_title="Values",
+        xaxis=dict(
+            type="date",
+            rangeslider=dict(visible=True),
+            rangeselector=dict(
+                buttons=list(
+                    [
+                        dict(count=1, label="1m", step="minute", stepmode="backward"),
+                        dict(count=5, label="5m", step="minute", stepmode="backward"),
+                        dict(count=15, label="15m", step="minute", stepmode="backward"),
+                        dict(count=1, label="1h", step="hour", stepmode="backward"),
+                        dict(step="all", label="All"),
+                    ]
+                )
+            ),
+        ),
+        hovermode="x unified",
+        showlegend=True,
+        height=700,
+    )
+    # Save HTML
+    output_file_html = os.path.join(output_dir, f"{base_filename}_timeseries.html")
     fig.write_html(output_file_html)
-print(f"Graph saved as {output_file_html}")
+    print(f"Graph saved as {output_file_html}")
 
 # Save PNG if requested
 if args.png:
     output_file_png = os.path.join(output_dir, f"{base_filename}_timeseries.png")
-
-    # Try method 1: kaleido
-    png_saved = False
-    print("Attempting PNG export with kaleido...")
     try:
         import kaleido
 
-        fig.write_image(output_file_png, width=1920, height=1080, engine="kaleido")
-        print(f"Graph saved as {output_file_png}")
-        png_saved = True
-    except ImportError:
-        print(f"Kaleido not installed. Trying alternative method...")
+        print(f"Kaleido version: {kaleido.__version__}")
+        print(f"Attempting to save PNG to: {output_file_png}")
+
+        # Make sure the figure has data
+        if len(fig.data) == 0:
+            print("Warning: Figure has no data traces. Skipping PNG export.")
+        else:
+            fig.write_image(output_file_png, width=1920, height=1080, format="png")
+
+            # Check if file was created
+            if os.path.exists(output_file_png):
+                file_size = os.path.getsize(output_file_png)
+                print(f"Graph saved as {output_file_png} ({file_size} bytes)")
+            else:
+                print(f"PNG file was not created at {output_file_png}")
+
+    except ImportError as e:
+        print(f"Kaleido import error: {e}")
+        print(f"Install with: pip install -U kaleido")
     except Exception as e:
-        print(f"Kaleido failed: {str(e)}. Trying alternative method...")
-
-    # Try method 2: orca (legacy)
-    if not png_saved:
-        try:
-            fig.write_image(output_file_png, width=1920, height=1080, engine="orca")
-            print(f"Graph saved as {output_file_png} (using orca)")
-            png_saved = True
-        except Exception as e:
-            print(f"Orca also failed: {str(e)}")
-
-    # If both failed, provide instructions
-    if not png_saved:
-        print(f"\nCould not export PNG. To enable PNG export, try:")
-        print(f"1. pip install -U kaleido")
-        print(f"2. pip install -U plotly")
-        print(f"3. If still failing, you can open the HTML file and take a screenshot")
-        print(f"\nHTML file available at: {output_file_html}")
+        print(f"Could not save PNG. Error details:")
+        print(f"  Error type: {type(e).__name__}")
+        print(f"  Error message: {str(e)}")
 
 print("\n=== Analysis Complete ===")
 print(f"Total records processed: {len(df)}")
 print(f"Records used for visualization: {len(df_plot)}")
 print(f"Fields extracted: {', '.join(sorted(value_columns))}")
+print(f"Field types: {field_types}")

@@ -353,8 +353,18 @@ for field_name in value_columns:
 
 print(f"Detected field types: {field_types}")
 
-# Create a single timeline figure
-fig = go.Figure()
+# Separate fields by type
+boolean_fields = [k for k, v in field_types.items() if v == "boolean"]
+numeric_fields = [k for k, v in field_types.items() if v == "numeric"]
+string_fields = [k for k, v in field_types.items() if v == "string"]
+
+# Create figure with secondary y-axis if we have both boolean and numeric fields
+if len(boolean_fields) > 0 and len(numeric_fields) > 0:
+    # Create figure with dual y-axes
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+else:
+    # Single y-axis is fine
+    fig = go.Figure()
 
 # Plot each field based on its type
 colors = [
@@ -380,101 +390,111 @@ colors = [
     "darkgreen",
 ]
 
-for idx, field_name in enumerate(sorted(value_columns)):
+idx = 0
+
+# Plot boolean fields first (on primary y-axis or left side)
+for field_name in sorted(boolean_fields):
     if field_name not in df_plot.columns:
         continue
 
     color = colors[idx % len(colors)]
-    field_type = field_types.get(field_name, "unknown")
+    idx += 1
 
-    if field_type == "boolean":
-        # For boolean fields, show as thick line when True (value 1), nothing when False
-        # Convert to 1/None for visualization
-        y_values = []
-        for val in df_plot[field_name]:
-            if pd.isna(val):
-                y_values.append(None)
-            elif val == True or val == 1 or val == 1.0:
-                y_values.append(1)
-            else:
-                y_values.append(None)
-
-        fig.add_trace(
-            go.Scatter(
-                x=df_plot["timestamp"],
-                y=y_values,
-                mode="lines",
-                name=f"{field_name} (bool)",
-                line=dict(color=color, width=4),
-                connectgaps=False,
-                hovertemplate="%{x}<br>" + field_name + ": True<extra></extra>",
-            )
-        )
-
-    elif field_type == "numeric":
-        # For numeric fields, show actual values with lines and markers
-        if args.lightweight:
-            # Lightweight mode: no markers
-            fig.add_trace(
-                go.Scatter(
-                    x=df_plot["timestamp"],
-                    y=df_plot[field_name],
-                    mode="lines",
-                    name=f"{field_name} (num)",
-                    line=dict(color=color, width=2),
-                    hovertemplate="%{x}<br>" + field_name + ": %{y}<extra></extra>",
-                )
-            )
+    # For boolean fields, show as thick line when True (value 1), nothing when False
+    # Convert to 1/None for visualization
+    y_values = []
+    for val in df_plot[field_name]:
+        if pd.isna(val):
+            y_values.append(None)
+        elif val == True or val == 1 or val == 1.0:
+            y_values.append(1)
         else:
-            # Regular mode: with markers
-            fig.add_trace(
-                go.Scatter(
-                    x=df_plot["timestamp"],
-                    y=df_plot[field_name],
-                    mode="lines+markers",
-                    name=f"{field_name} (num)",
-                    line=dict(color=color, width=2),
-                    marker=dict(size=4, color=color),
-                    hovertemplate="%{x}<br>" + field_name + ": %{y}<extra></extra>",
-                )
-            )
+            y_values.append(0)
 
-    elif field_type == "string":
-        # For string fields, show as categorical (convert to numeric codes)
-        # Get unique values and create a mapping
-        unique_vals = df_plot[field_name].dropna().unique()
-        val_to_num = {val: idx for idx, val in enumerate(unique_vals)}
+    trace = go.Scatter(
+        x=df_plot["timestamp"],
+        y=y_values,
+        mode="lines",
+        name=f"{field_name} (bool)",
+        line=dict(color=color, width=4),
+        connectgaps=False,
+        hovertemplate="%{x}<br>" + field_name + ": %{y}<extra></extra>",
+    )
 
-        y_values = [
-            val_to_num.get(val, None) if pd.notna(val) else None
-            for val in df_plot[field_name]
-        ]
-
-        fig.add_trace(
-            go.Scatter(
-                x=df_plot["timestamp"],
-                y=y_values,
-                mode="lines+markers",
-                name=f"{field_name} (str)",
-                line=dict(color=color, width=2),
-                marker=dict(size=6, color=color),
-                text=[str(val) if pd.notna(val) else "" for val in df_plot[field_name]],
-                hovertemplate="%{x}<br>" + field_name + ": %{text}<extra></extra>",
-            )
-        )
-
+    if len(boolean_fields) > 0 and len(numeric_fields) > 0:
+        fig.add_trace(trace, secondary_y=False)
     else:
-        # Unknown type - try to plot as-is
-        fig.add_trace(
-            go.Scatter(
-                x=df_plot["timestamp"],
-                y=df_plot[field_name],
-                mode="lines+markers",
-                name=f"{field_name}",
-                line=dict(color=color),
-                marker=dict(size=4),
-            )
+        fig.add_trace(trace)
+
+# Plot numeric fields (on secondary y-axis or right side if we have boolean fields)
+for field_name in sorted(numeric_fields):
+    if field_name not in df_plot.columns:
+        continue
+
+    color = colors[idx % len(colors)]
+    idx += 1
+
+    # For numeric fields, show actual values with lines and markers
+    if args.lightweight:
+        # Lightweight mode: no markers
+        trace = go.Scatter(
+            x=df_plot["timestamp"],
+            y=df_plot[field_name],
+            mode="lines",
+            name=f"{field_name} (num)",
+            line=dict(color=color, width=2),
+            hovertemplate="%{x}<br>" + field_name + ": %{y}<extra></extra>",
         )
+    else:
+        # Regular mode: with markers
+        trace = go.Scatter(
+            x=df_plot["timestamp"],
+            y=df_plot[field_name],
+            mode="lines+markers",
+            name=f"{field_name} (num)",
+            line=dict(color=color, width=2),
+            marker=dict(size=4, color=color),
+            hovertemplate="%{x}<br>" + field_name + ": %{y}<extra></extra>",
+        )
+
+    if len(boolean_fields) > 0 and len(numeric_fields) > 0:
+        fig.add_trace(trace, secondary_y=True)
+    else:
+        fig.add_trace(trace)
+
+# Plot string fields (convert to categorical on secondary y-axis)
+for field_name in sorted(string_fields):
+    if field_name not in df_plot.columns:
+        continue
+
+    color = colors[idx % len(colors)]
+    idx += 1
+
+    # For string fields, show as categorical (convert to numeric codes)
+    # Get unique values and create a mapping
+    unique_vals = df_plot[field_name].dropna().unique()
+    val_to_num = {val: idx for idx, val in enumerate(unique_vals)}
+
+    y_values = [
+        val_to_num.get(val, None) if pd.notna(val) else None
+        for val in df_plot[field_name]
+    ]
+
+    trace = go.Scatter(
+        x=df_plot["timestamp"],
+        y=y_values,
+        mode="lines+markers",
+        name=f"{field_name} (str)",
+        line=dict(color=color, width=2),
+        marker=dict(size=6, color=color),
+        text=[str(val) if pd.notna(val) else "" for val in df_plot[field_name]],
+        hovertemplate="%{x}<br>" + field_name + ": %{text}<extra></extra>",
+    )
+
+    if len(boolean_fields) > 0 and len(numeric_fields) > 0:
+        fig.add_trace(trace, secondary_y=True)
+    else:
+        fig.add_trace(trace)
 
 # Update layout based on mode
 if args.lightweight:
@@ -482,12 +502,23 @@ if args.lightweight:
     fig.update_layout(
         title=f"Telemetry Data: {base_filename}",
         xaxis_title="Time (UTC)",
-        yaxis_title="Values",
         xaxis=dict(type="date"),
         hovermode="x unified",
         showlegend=True,
         height=700,
     )
+
+    # Set y-axis titles
+    if len(boolean_fields) > 0 and len(numeric_fields) > 0:
+        fig.update_yaxes(title_text="Boolean (0/1)", secondary_y=False)
+        fig.update_yaxes(title_text="Numeric Values", secondary_y=True)
+    elif len(boolean_fields) > 0:
+        fig.update_layout(yaxis_title="Boolean (0/1)")
+    elif len(numeric_fields) > 0:
+        fig.update_layout(yaxis_title="Numeric Values")
+    else:
+        fig.update_layout(yaxis_title="Values")
+
     # Write with CDN mode for smaller file size
     config = {"displayModeBar": True, "displaylogo": False}
     fig.write_html(
@@ -495,12 +526,14 @@ if args.lightweight:
         config=config,
         include_plotlyjs="cdn",
     )
+    print(
+        f"Graph saved as {os.path.join(output_dir, f'{base_filename}_timeseries.html')}"
+    )
 else:
     # Regular mode - full features
     fig.update_layout(
         title=f"Telemetry Data: {base_filename}",
         xaxis_title="Time (UTC)",
-        yaxis_title="Values",
         xaxis=dict(
             type="date",
             rangeslider=dict(visible=True),
@@ -520,6 +553,18 @@ else:
         showlegend=True,
         height=700,
     )
+
+    # Set y-axis titles
+    if len(boolean_fields) > 0 and len(numeric_fields) > 0:
+        fig.update_yaxes(title_text="Boolean (0/1)", secondary_y=False)
+        fig.update_yaxes(title_text="Numeric Values", secondary_y=True)
+    elif len(boolean_fields) > 0:
+        fig.update_layout(yaxis_title="Boolean (0/1)")
+    elif len(numeric_fields) > 0:
+        fig.update_layout(yaxis_title="Numeric Values")
+    else:
+        fig.update_layout(yaxis_title="Values")
+
     # Save HTML
     output_file_html = os.path.join(output_dir, f"{base_filename}_timeseries.html")
     fig.write_html(output_file_html)

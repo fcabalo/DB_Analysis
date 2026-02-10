@@ -400,8 +400,7 @@ for field_name in sorted(boolean_fields):
     color = colors[idx % len(colors)]
     idx += 1
 
-    # For boolean fields, show as thick line when True (value 1), nothing when False
-    # Convert to 1/None for visualization
+    # For boolean fields, convert to 0/1 for plotting
     y_values = []
     for val in df_plot[field_name]:
         if pd.isna(val):
@@ -508,12 +507,25 @@ if args.lightweight:
         height=700,
     )
 
-    # Set y-axis titles
+    # Set y-axis titles and format boolean axis
     if len(boolean_fields) > 0 and len(numeric_fields) > 0:
-        fig.update_yaxes(title_text="Boolean (0/1)", secondary_y=False)
+        fig.update_yaxes(
+            title_text="Boolean",
+            tickmode="array",
+            tickvals=[0, 1],
+            ticktext=["False", "True"],
+            secondary_y=False,
+        )
         fig.update_yaxes(title_text="Numeric Values", secondary_y=True)
     elif len(boolean_fields) > 0:
-        fig.update_layout(yaxis_title="Boolean (0/1)")
+        fig.update_layout(
+            yaxis=dict(
+                title="Boolean",
+                tickmode="array",
+                tickvals=[0, 1],
+                ticktext=["False", "True"],
+            )
+        )
     elif len(numeric_fields) > 0:
         fig.update_layout(yaxis_title="Numeric Values")
     else:
@@ -554,12 +566,25 @@ else:
         height=700,
     )
 
-    # Set y-axis titles
+    # Set y-axis titles and format boolean axis
     if len(boolean_fields) > 0 and len(numeric_fields) > 0:
-        fig.update_yaxes(title_text="Boolean (0/1)", secondary_y=False)
+        fig.update_yaxes(
+            title_text="Boolean",
+            tickmode="array",
+            tickvals=[0, 1],
+            ticktext=["False", "True"],
+            secondary_y=False,
+        )
         fig.update_yaxes(title_text="Numeric Values", secondary_y=True)
     elif len(boolean_fields) > 0:
-        fig.update_layout(yaxis_title="Boolean (0/1)")
+        fig.update_layout(
+            yaxis=dict(
+                title="Boolean",
+                tickmode="array",
+                tickvals=[0, 1],
+                ticktext=["False", "True"],
+            )
+        )
     elif len(numeric_fields) > 0:
         fig.update_layout(yaxis_title="Numeric Values")
     else:

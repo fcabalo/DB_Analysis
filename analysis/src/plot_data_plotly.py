@@ -53,7 +53,7 @@ parser.add_argument(
     help="Output directory for generated files (default: current directory)",
 )
 parser.add_argument(
-    "--png", action="store_true", help="Skip PNG generation (only create HTML)"
+    "--png", action="store_true", help="Generate PNG images (default: disabled)"
 )
 parser.add_argument("--no-csv", action="store_true", help="Skip CSV exports")
 parser.add_argument(
@@ -207,6 +207,10 @@ for item in data:
         # Try direct in message
         if value is None:
             value = get_nested_value(item, f"message.{field_name}")
+        
+        # Try message.ActiveCabInfo (for Cab1/Cab2)
+        if value is None:
+            value = get_nested_value(item, f"message.ActiveCabInfo.{field_name}")
 
         if value is not None:
             records_by_timestamp[timestamp][field_name] = value
@@ -506,31 +510,31 @@ if args.lightweight:
         showlegend=True,
         height=700,
     )
-
+    
     # Set y-axis titles and format boolean axis
     if len(boolean_fields) > 0 and len(numeric_fields) > 0:
         fig.update_yaxes(
             title_text="Boolean",
-            tickmode="array",
+            tickmode='array',
             tickvals=[0, 1],
-            ticktext=["False", "True"],
-            secondary_y=False,
+            ticktext=['False', 'True'],
+            secondary_y=False
         )
         fig.update_yaxes(title_text="Numeric Values", secondary_y=True)
     elif len(boolean_fields) > 0:
         fig.update_layout(
             yaxis=dict(
                 title="Boolean",
-                tickmode="array",
+                tickmode='array',
                 tickvals=[0, 1],
-                ticktext=["False", "True"],
+                ticktext=['False', 'True']
             )
         )
     elif len(numeric_fields) > 0:
         fig.update_layout(yaxis_title="Numeric Values")
     else:
         fig.update_layout(yaxis_title="Values")
-
+    
     # Write with CDN mode for smaller file size
     config = {"displayModeBar": True, "displaylogo": False}
     fig.write_html(
@@ -538,9 +542,7 @@ if args.lightweight:
         config=config,
         include_plotlyjs="cdn",
     )
-    print(
-        f"Graph saved as {os.path.join(output_dir, f'{base_filename}_timeseries.html')}"
-    )
+    print(f"Graph saved as {os.path.join(output_dir, f'{base_filename}_timeseries.html')}")
 else:
     # Regular mode - full features
     fig.update_layout(
@@ -565,31 +567,31 @@ else:
         showlegend=True,
         height=700,
     )
-
+    
     # Set y-axis titles and format boolean axis
     if len(boolean_fields) > 0 and len(numeric_fields) > 0:
         fig.update_yaxes(
             title_text="Boolean",
-            tickmode="array",
+            tickmode='array',
             tickvals=[0, 1],
-            ticktext=["False", "True"],
-            secondary_y=False,
+            ticktext=['False', 'True'],
+            secondary_y=False
         )
         fig.update_yaxes(title_text="Numeric Values", secondary_y=True)
     elif len(boolean_fields) > 0:
         fig.update_layout(
             yaxis=dict(
                 title="Boolean",
-                tickmode="array",
+                tickmode='array',
                 tickvals=[0, 1],
-                ticktext=["False", "True"],
+                ticktext=['False', 'True']
             )
         )
     elif len(numeric_fields) > 0:
         fig.update_layout(yaxis_title="Numeric Values")
     else:
         fig.update_layout(yaxis_title="Values")
-
+    
     # Save HTML
     output_file_html = os.path.join(output_dir, f"{base_filename}_timeseries.html")
     fig.write_html(output_file_html)

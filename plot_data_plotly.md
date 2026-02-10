@@ -4,8 +4,8 @@
 
 ```bash
 python analysis/src/plot_data_plotly.py data.jsonl \
- --field-paths "message.OutsideControlData.ActivatedHornHigh" \
- "message.OutsideControlData.ActivatedHornLow" \
+ --field-paths "message.OutsideControlData.ActivateHornHigh" \
+ "message.OutsideControlData.ActivateHornLow" \
  "message.MessagePayload.ThreewaySwitchState"
 ```
 
@@ -13,15 +13,15 @@ python analysis/src/plot_data_plotly.py data.jsonl \
 
 ```powershell
 python analysis/src/plot_data_plotly.py data.jsonl `
- --field-paths "message.OutsideControlData.ActivatedHornHigh" `
- "message.OutsideControlData.ActivatedHornLow" `
+ --field-paths "message.OutsideControlData.ActivateHornHigh" `
+ "message.OutsideControlData.ActivateHornLow" `
  "message.MessagePayload.ThreewaySwitchState"
 ```
 
 ### Windows (cmd)
 
 ```cmd
-python analysis/src/plot_data_plotly.py data.jsonl --field-paths "message.OutsideControlData.ActivatedHornHigh" "message.OutsideControlData.ActivatedHornLow" "message.MessagePayload.ThreewaySwitchState"
+python analysis/src/plot_data_plotly.py data.jsonl --field-paths "message.OutsideControlData.ActivateHornHigh" "message.OutsideControlData.ActivateHornLow" "message.MessagePayload.ThreewaySwitchState"
 ```
 
 # Using simple field names (searches common locations)
@@ -30,20 +30,20 @@ python analysis/src/plot_data_plotly.py data.jsonl --field-paths "message.Outsid
 
 ```bash
 python analysis/src/plot_data_plotly.py data.jsonl \
- --fields ActivatedHornHigh ActivatedHornLow ThreewaySwitchState
+ --fields ActivateHornHigh ActivateHornLow ThreewaySwitchState
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
 python analysis/src/plot_data_plotly.py data.jsonl `
- --fields ActivatedHornHigh ActivatedHornLow ThreewaySwitchState
+ --fields ActivateHornHigh ActivateHornLow ThreewaySwitchState
 ```
 
 ### Windows (cmd)
 
 ```cmd
-python analysis/src/plot_data_plotly.py data.jsonl --fields ActivatedHornHigh ActivatedHornLow ThreewaySwitchState
+python analysis/src/plot_data_plotly.py data.jsonl --fields ActivateHornHigh ActivateHornLow ThreewaySwitchState
 ```
 
 # Filter by message type
@@ -53,7 +53,7 @@ python analysis/src/plot_data_plotly.py data.jsonl --fields ActivatedHornHigh Ac
 ```bash
 python analysis/src/plot_data_plotly.py data.jsonl \
  --message-types "Remoot.SS139OutsideControlMessage" \
- --fields ActivatedHornHigh ActivatedHornLow
+ --fields ActivateHornHigh ActivateHornLow
 ```
 
 ### Windows (PowerShell)
@@ -61,13 +61,13 @@ python analysis/src/plot_data_plotly.py data.jsonl \
 ```powershell
 python analysis/src/plot_data_plotly.py data.jsonl `
  --message-types "Remoot.SS139OutsideControlMessage" `
- --fields ActivatedHornHigh ActivatedHornLow
+ --fields ActivateHornHigh ActivateHornLow
 ```
 
 ### Windows (cmd)
 
 ```cmd
-python analysis/src/plot_data_plotly.py data.jsonl --message-types "Remoot.SS139OutsideControlMessage" --fields ActivatedHornHigh ActivatedHornLow
+python analysis/src/plot_data_plotly.py data.jsonl --message-types "Remoot.SS139OutsideControlMessage" --fields ActivateHornHigh ActivateHornLow
 ```
 
 # Custom output directory and max points
@@ -76,7 +76,7 @@ python analysis/src/plot_data_plotly.py data.jsonl --message-types "Remoot.SS139
 
 ```bash
 python analysis/src/plot_data_plotly.py data.jsonl \
- --fields ActivatedHornHigh ThreewaySwitchState \
+ --fields ActivateHornHigh ThreewaySwitchState \
  --max-points 5000 \
  --output-dir ./output
 ```
@@ -85,7 +85,7 @@ python analysis/src/plot_data_plotly.py data.jsonl \
 
 ```powershell
 python analysis/src/plot_data_plotly.py data.jsonl `
- --fields ActivatedHornHigh ThreewaySwitchState `
+ --fields ActivateHornHigh ThreewaySwitchState `
  --max-points 5000 `
  --output-dir ./output
 ```
@@ -93,7 +93,7 @@ python analysis/src/plot_data_plotly.py data.jsonl `
 ### Windows (cmd)
 
 ```cmd
-python analysis/src/plot_data_plotly.py data.jsonl --fields ActivatedHornHigh ThreewaySwitchState --max-points 5000 --output-dir ./output
+python analysis/src/plot_data_plotly.py data.jsonl --fields ActivateHornHigh ThreewaySwitchState --max-points 5000 --output-dir ./output
 ```
 
 # Enable PNG generation
@@ -102,7 +102,7 @@ python analysis/src/plot_data_plotly.py data.jsonl --fields ActivatedHornHigh Th
 
 ```bash
 python analysis/src/plot_data_plotly.py data.jsonl \
- --fields ActivatedHornHigh \
+ --fields ActivateHornHigh \
  --png
 ```
 
@@ -110,14 +110,14 @@ python analysis/src/plot_data_plotly.py data.jsonl \
 
 ```powershell
 python analysis/src/plot_data_plotly.py data.jsonl `
- --fields ActivatedHornHigh `
+ --fields ActivateHornHigh `
  --png
 ```
 
 ### Windows (cmd)
 
 ```cmd
-python analysis/src/plot_data_plotly.py data.jsonl --fields ActivatedHornHigh --png
+python analysis/src/plot_data_plotly.py data.jsonl --fields ActivateHornHigh --png
 ```
 
 **Note:** PNG generation is **disabled by default** for faster processing. Use `--png` to enable it.
@@ -128,7 +128,7 @@ python analysis/src/plot_data_plotly.py data.jsonl --fields ActivatedHornHigh --
 
 ```bash
 python analysis/src/plot_data_plotly.py data.jsonl \
- --fields ActivatedHornHigh \
+ --fields ActivateHornHigh \
  --encoding utf-16
 ```
 
@@ -136,14 +136,14 @@ python analysis/src/plot_data_plotly.py data.jsonl \
 
 ```powershell
 python analysis/src/plot_data_plotly.py data.jsonl `
- --fields ActivatedHornHigh `
+ --fields ActivateHornHigh `
  --encoding utf-16
 ```
 
 ### Windows (cmd)
 
 ```cmd
-python analysis/src/plot_data_plotly.py data.jsonl --fields ActivatedHornHigh --encoding utf-16
+python analysis/src/plot_data_plotly.py data.jsonl --fields ActivateHornHigh --encoding utf-16
 ```
 
 # Lightweight mode (for large datasets or faster browser loading)
@@ -152,7 +152,7 @@ python analysis/src/plot_data_plotly.py data.jsonl --fields ActivatedHornHigh --
 
 ```bash
 python analysis/src/plot_data_plotly.py data.jsonl \
- --fields ActivatedHornHigh ThreewaySwitchState \
+ --fields ActivateHornHigh ThreewaySwitchState \
  --max-points 500 \
  --lightweight \
  --output-dir output
@@ -162,7 +162,7 @@ python analysis/src/plot_data_plotly.py data.jsonl \
 
 ```powershell
 python analysis/src/plot_data_plotly.py data.jsonl `
- --fields ActivatedHornHigh ThreewaySwitchState `
+ --fields ActivateHornHigh ThreewaySwitchState `
  --max-points 500 `
  --lightweight `
  --output-dir output
@@ -171,7 +171,7 @@ python analysis/src/plot_data_plotly.py data.jsonl `
 ### Windows (cmd)
 
 ```cmd
-python analysis/src/plot_data_plotly.py data.jsonl --fields ActivatedHornHigh ThreewaySwitchState --max-points 500 --lightweight --output-dir output
+python analysis/src/plot_data_plotly.py data.jsonl --fields ActivateHornHigh ThreewaySwitchState --max-points 500 --lightweight --output-dir output
 ```
 
 **Lightweight mode benefits:**

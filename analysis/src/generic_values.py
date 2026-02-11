@@ -37,7 +37,7 @@ class PlotData:
         self.title = axis["title"] if "title" in axis and axis["title"] else axis["messageContentType"]
         self.sourceFile = axis["sourceFile"]
         self.messageContentType = axis["messageContentType"]
-        self.csvFileName = axis["csvFileName"] if "csvFileName" in axis and axis["csvFileName"] else self.sourceFile.split(".")[0] + "_" + self.fieldPath.split(".")[-1]
+        self.csvFileName = axis["csvFileName"].split(".")[0] if "csvFileName" in axis and axis["csvFileName"] else None
         self.data = {"x": [], "y": []}
 
 def parse_ts(s: str) -> datetime:
@@ -130,17 +130,20 @@ def extract_data(subplot):
 
     subplot.data["x"] = xs_sorted
     subplot.data["y"] = ys_sorted
-
-    csv_out =  DATA_PATH + subplot.csvFileName + ".csv"
-
-    with open(csv_out, "w", newline="", encoding="utf-8") as f:
+    
+    if subplot.csvFileName:
+        header = ["timestamp", pathList[-1]]
+        write_to_csv(DATA_PATH + subplot.csvFileName + ".csv", data, header)
+    
+def write_to_csv(filename, data, header):
+    with open(filename, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["timestamp", pathList[-1]])
+        writer.writerow(header)
 
-        for ts, y in zip(xs, ys):
+        for ts, y in data:
             writer.writerow([ts.isoformat(), y])
-
-    print(f"[{subplot.index}]CSV written to: {csv_out}")
+            
+        print(f"CSV written to: {filename}")
     
 #Plot the data based on config
 def plot(subplots, config):

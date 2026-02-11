@@ -1,15 +1,26 @@
 {
 	"title": "PipelineManagerHeartbeatAndStateTransitions",
-	"rows": 1,
+	"rows": 2,
 	"columns": 2,
 	"axes": [
 		{
 			"datatype": "boolean",
 			"fieldPath": "message.ExpirationTime.HasNanos",
-			"onChangeOnly": false,
+			"onChangeOnly": true,
 			"sourceFile": "couchdb_export_20260126_141940.jsonl",
 			"messageContentType": "PipelineManagerHeartbeatAndStateTransitions.Heartbeat",
+			"csvFileName": "couchdb_export_20260126_112255_HasNanos",
 			"ylabel": "HasNanos"
+		},
+		{
+			"datatype": "number",
+			"fieldPath": "message.ExpirationTime.Nanos",
+			"onChangeOnly": false,
+			"sourceFile": "couchdb_export_20260126_112255.jsonl",
+			"messageContentType": "PipelineManagerHeartbeatAndStateTransitions.Heartbeat",
+			"ylabel": "Nanos",
+			"csvFileName": "couchdb_export_20260126_112255_Nanos",
+			"style": "g^-"
 		},
 		{
 			"datatype": "boolean",
@@ -17,7 +28,19 @@
 			"onChangeOnly": false,
 			"sourceFile": "couchdb_export_20260126_141940.jsonl",
 			"messageContentType": "PipelineManagerHeartbeatAndStateTransitions.Heartbeat",
+			"csvFileName": "couchdb_export_20260126_112255_HasSeconds",
 			"ylabel": "HasSeconds"
+		},
+		{
+			"datatype": "number",
+			"fieldPath": "message.ExpirationTime.Seconds",
+			"onChangeOnly": false,
+			"sourceFile": "couchdb_export_20260126_112255.jsonl",
+			"messageContentType": "PipelineManagerHeartbeatAndStateTransitions.Heartbeat",
+			"ylabel": "Seconds",
+			"plotType": "step",
+			"title": "Step Number",
+			"style": "ro"
 		}
 	]
 }

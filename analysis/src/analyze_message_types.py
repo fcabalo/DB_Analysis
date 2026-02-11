@@ -120,10 +120,10 @@ for msg_type, data_dict in message_type_data.items():
         timestamps_sorted = sorted(timestamps)
         first_appearance = timestamps_sorted[0]
         last_appearance = timestamps_sorted[-1]
-
+        
+        intervals = []
         # Calculate intervals only if we have more than one timestamp
         if len(timestamps_sorted) > 1:
-            intervals = []
             for i in range(1, len(timestamps_sorted)):
                 interval = (
                     timestamps_sorted[i] - timestamps_sorted[i - 1]
@@ -152,6 +152,8 @@ for msg_type, data_dict in message_type_data.items():
             "Avg Interval": avg_interval_str,
             "First Appearance": first_appearance,
             "Last Appearance": last_appearance,
+            "Timestamp": timestamps_sorted,
+            "Intervals": [avg_interval_seconds] + intervals
         }
     )
 
@@ -248,6 +250,33 @@ output_file_bar_html = os.path.join(
 )
 fig_bar.write_html(output_file_bar_html)
 print(f"Chart saved as {output_file_bar_html}")
+
+# Create scatter plot
+fig_scatter = go.Figure()
+
+for result in results:
+    fig_scatter.add_trace(
+        go.Scatter(
+            x=result["Timestamp"],
+            y=result["Intervals"],
+            mode='markers',
+            name=result["Message Type"]
+        )
+    )
+
+fig_scatter.update_layout(
+    title=f"Message Type Intervals - {base_filename}",
+    xaxis_title="Timestamp",
+    yaxis_title="Interval(seconds)",
+)
+
+    # Save scatter plot HTML
+output_file_scatter_html = os.path.join(
+    output_dir, f"{base_filename}_message_type_scatter.html"
+)
+fig_scatter.write_html(output_file_scatter_html)
+print(f"Chart saved as {output_file_scatter_html}")
+
 
 # Save PNG if requested
 if args.png:

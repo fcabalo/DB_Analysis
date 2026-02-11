@@ -29,8 +29,8 @@ class PlotData:
         self.datatype = axis["datatype"]
         self.fieldPath = axis["fieldPath"]
         self.onChangeOnly = axis["onChangeOnly"] if "onChangeOnly" in axis and axis["onChangeOnly"] else False
-        self.datetimeFrom = axis["datetimeFrom"] if "datetimeFrom" in axis and axis["datetimeFrom"] else None
-        self.datetimeTo = axis["datetimeTo"] if "datetimeTo" in axis and axis["datetimeTo"] else None
+        self.datetimeFrom = parse_ts(axis["datetimeFrom"]) if "datetimeFrom" in axis and axis["datetimeFrom"] else None
+        self.datetimeTo = parse_ts(axis["datetimeTo"]) if "datetimeTo" in axis and axis["datetimeTo"] else None
         self.ylabel = axis["ylabel"] if "ylabel" in axis and axis["ylabel"] else self.fieldPath.split(".")[-1]
         self.plotType = axis["plotType"] if "plotType" in axis and axis["plotType"] else "plot"
         self.style = axis["style"] if "style" in axis and axis["style"] else "-b"
@@ -104,9 +104,17 @@ def extract_data(subplot):
             if subplot.onChangeOnly and previous is not None and previous == y_val:
                 continue
             
+            dt = parse_ts(str(ts_raw))
+            
+            if subplot.datetimeFrom and dt < subplot.datetimeFrom:
+                continue
+                
+            if subplot.datetimeTo and dt > subplot.datetimeTo:
+                continue
+            
             try:
                 previous = y_val
-                xs.append(parse_ts(str(ts_raw)))
+                xs.append(dt)
                 ys.append(y_val)
             except Exception:
                 missing += 1

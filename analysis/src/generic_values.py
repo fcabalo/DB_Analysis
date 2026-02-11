@@ -34,7 +34,7 @@ class PlotData:
         self.ylabel = axis["ylabel"] if "ylabel" in axis and axis["ylabel"] else self.fieldPath.split(".")[-1]
         self.plotType = axis["plotType"] if "plotType" in axis and axis["plotType"] else "plot"
         self.style = axis["style"] if "style" in axis and axis["style"] else "-b"
-        self.title = axis["title"] if "title" in axis and axis["title"] else axis["messageContentType"]
+        self.title = axis["title"] if "title" in axis and axis["title"] else None
         self.sourceFile = axis["sourceFile"]
         self.messageContentType = axis["messageContentType"]
         self.csvFileName = axis["csvFileName"].split(".")[0] if "csvFileName" in axis and axis["csvFileName"] else None
@@ -176,14 +176,16 @@ def plot(subplots, config):
         if subplot.datatype == "boolean":
             axis.step('x', 'y', subplot.style, where='post', data=subplot.data)
             axis.set_yticks([0, 1], ['False', 'True'])
-            axis.set_ylabel(subplot.ylabel)
         elif subplot.plotType == "step":
             axis.step('x', 'y', subplot.style, where='post', data=subplot.data)
-            axis.set_ylabel(subplot.ylabel)
         else:
             axis.plot('x', 'y', subplot.style, data=subplot.data)
-            axis.set_ylabel(subplot.ylabel)
             
+        axis.set_ylabel(subplot.ylabel)
+        
+        if subplot.title:
+            axis.set_title(subplot.title)
+        
         index += 1
         col += 1
         
